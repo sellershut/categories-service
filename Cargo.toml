@@ -1,0 +1,19 @@
+[package]
+name = "categories-service"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[dependencies]
+
+[dependencies.sellershut-core]
+git = "https://github.com/sellershut/sellershut-core"
+features = ["rpc-server-categories", "serde", "time"]
+
+[dependencies.sellershut-services]
+git = "https://github.com/sellershut/services-lib"
+features = ["api", "postgres", "tracing"]
+
+[dev-dependencies.sellershut-core]
+git = "https://github.com/sellershut/sellershut-core"
+features = ["rpc-client-categories"]
