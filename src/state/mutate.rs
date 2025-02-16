@@ -6,6 +6,9 @@ use sellershut_core::{
     google::protobuf::Empty,
 };
 use tonic::{Request, Response, Status};
+use tracing::{debug_span, Instrument};
+
+use crate::{entity, utils::generate_id};
 
 use super::AppState;
 
@@ -15,9 +18,35 @@ impl MutateCategories for AppState {
     #[tracing::instrument(skip(self), err(Debug))]
     async fn create(
         &self,
-        _request: tonic::Request<UpsertCategoryRequest>,
+        request: tonic::Request<UpsertCategoryRequest>,
     ) -> Result<tonic::Response<Category>, Status> {
-        todo!()
+        let category = request
+            .into_inner()
+            .category
+            .ok_or_else(|| Status::data_loss("expected category to be available"))?;
+        let id = generate_id();
+
+        // Check if the value fits within the range of i64
+        let category = sqlx::query_as!(
+            entity::Category,
+            "insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)
+                values ($1, $2, $3, $4, $5, $6, $7) returning *",
+            &id,
+            &category.name,
+            &category.sub_categories,
+            category.image_url,
+            category.parent_id,
+            category.local,
+            category.ap_id,
+        )
+        .fetch_one(&self.services.postgres)
+        .instrument(debug_span!("pg.insert"))
+        .await
+        .map_err(|e| tonic::Status::internal(e.to_string()))?;
+
+        let category = Category::from(category);
+
+        Ok(tonic::Response::new(category))
     }
 
     #[doc = " Update a category"]
