@@ -289,6 +289,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -1742,7 +1743,7 @@ dependencies = [
 [[package]]
 name = "sellershut-core"
 version = "0.1.0"
-source = "git+https://github.com/sellershut/sellershut-core#e18ce11db7b42859f673ed96a6ce3a09aeba8670"
+source = "git+https://github.com/sellershut/sellershut-core#c8a844e6c648c3a3cb2e9d3850cbdcad8d3a57c9"
 dependencies = [
  "base64",
  "prost",

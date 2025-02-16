@@ -8,7 +8,10 @@ use sellershut_core::{
 use tonic::{Request, Response, Status};
 use tracing::{debug_span, Instrument};
 
-use crate::{entity, utils::generate_id};
+use crate::{
+    entity,
+    utils::{generate_id, validate_input},
+};
 
 use super::AppState;
 
@@ -24,9 +27,12 @@ impl MutateCategories for AppState {
             .into_inner()
             .category
             .ok_or_else(|| Status::data_loss("expected category to be available"))?;
+        tracing::trace!(id = %category.ap_id, name = %category.name, "creating category");
+
+        validate_input(&category)?;
+
         let id = generate_id();
 
-        // Check if the value fits within the range of i64
         let category = sqlx::query_as!(
             entity::Category,
             "insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)
@@ -43,20 +49,60 @@ impl MutateCategories for AppState {
         .instrument(debug_span!("pg.insert"))
         .await
         .map_err(|e| tonic::Status::internal(e.to_string()))?;
+        tracing::debug!(id = %category.ap_id, "category created");
 
         let category = Category::from(category);
 
         Ok(tonic::Response::new(category))
     }
 
-    #[doc = " Update a category"]
+    #[doc = " Upsert a category"]
     #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
-    async fn update(
+    async fn upsert(
         &self,
-        _request: Request<UpsertCategoryRequest>,
+        request: Request<UpsertCategoryRequest>,
     ) -> Result<Response<Category>, Status> {
-        todo!()
+        let data = request
+            .into_inner()
+            .category
+            .ok_or_else(|| Status::data_loss("expected category to be available"))?;
+        tracing::trace!(id = %data.ap_id, name = %data.name, "upserting category");
+
+        validate_input(&data)?;
+
+        let id = generate_id();
+
+        let category = sqlx::query_as!(
+            entity::Category,
+            "insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)
+                values ($1, $2, $3, $4, $5, $6, $7)
+                on conflict (ap_id)
+                do update 
+                set name = excluded.name,
+                    sub_categories = excluded.sub_categories,
+                    image_url = excluded.image_url,
+                    parent_id = excluded.parent_id,
+                    id = excluded.id,
+                    local = excluded.local
+                returning *",
+            id,
+            &data.name,
+            &data.sub_categories,
+            data.image_url,
+            data.parent_id,
+            &data.local,
+            data.ap_id,
+        )
+        .fetch_one(&self.services.postgres)
+        .await
+        .map_err(|e| Status::internal(e.to_string()))?;
+
+        tracing::debug!(id = %data.ap_id, name = %category.name, "category upserted");
+
+        let category = Category::from(category);
+
+        Ok(Response::new(category))
     }
 
     #[doc = " Delete a category"]
@@ -64,8 +110,22 @@ impl MutateCategories for AppState {
     #[tracing::instrument(skip(self), err(Debug))]
     async fn delete(
         &self,
-        _request: Request<DeleteCategoryRequest>,
+        request: Request<DeleteCategoryRequest>,
     ) -> Result<Response<Empty>, Status> {
-        todo!()
+        let id = request.into_inner().id;
+        tracing::trace!(id = id, "deleting category");
+
+        let category = sqlx::query_as!(
+            entity::Category,
+            "delete from category where ap_id = $1 returning *",
+            &id
+        )
+        .fetch_one(&self.services.postgres)
+        .await
+        .map_err(|e| Status::internal(e.to_string()))?;
+
+        tracing::debug!("category deleted: {:?}", category);
+
+        Ok(Response::new(Empty::default()))
     }
 }
