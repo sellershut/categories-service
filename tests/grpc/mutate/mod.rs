@@ -21,10 +21,7 @@ async fn create_user(pool: PgPool) -> Result<()> {
         ..Default::default()
     };
 
-    let response = app
-        .mutate
-        .create(user_request.into_request())
-        .await;
+    let response = app.mutate.create(user_request.into_request()).await;
 
     assert!(response.is_ok());
 
