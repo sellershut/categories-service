@@ -1,0 +1,17 @@
+[application]
+env = "development"
+port = 1610
+log-level = "h2=info,debug"
+
+[misc]
+something = "http://localhost:8080"
+
+[database]
+pool_size = 100
+port = 5432
+name = "categories"
+host = "localhost"
+user = "postgres"
+password = "password"
+
+# vim:ft=toml
