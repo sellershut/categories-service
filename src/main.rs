@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
         .build()?;
 
     let config = config.try_deserialize::<Configuration>()?;
-    let _app_config: AppConfig = serde_json::from_value(config.misc.clone())?;
+    let app_config: AppConfig = serde_json::from_value(config.misc.clone())?;
 
     let _tracing = TracingBuilder::new().build(config.application.log_level);
 
@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
         .await?
         .build();
 
-    let state = AppState::new(config.application.port, services);
+    let state = AppState::new(config.application.port, services, app_config);
 
     categories_service::run(state, tx).await?;
 

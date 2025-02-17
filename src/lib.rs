@@ -7,9 +7,9 @@ use serde::Deserialize;
 use state::AppState;
 use tracing::{debug, trace};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Copy)]
 pub struct AppConfig {
-    something: String,
+    max_query_results: i32,
 }
 
 pub async fn run(state: AppState, tx: tokio::sync::oneshot::Sender<u16>) -> anyhow::Result<()> {

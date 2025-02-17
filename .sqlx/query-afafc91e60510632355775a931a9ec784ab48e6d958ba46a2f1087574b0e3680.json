@@ -1,0 +1,72 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            select * from category\n            where \n                (\n                    created_at = $1\n                    and id > $2\n                )\n                or created_at >= $1\n            order by\n                created_at asc,\n                id asc\n            limit\n                $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "ap_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "local",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "sub_categories",
+        "type_info": "VarcharArray"
+      },
+      {
+        "ordinal": 5,
+        "name": "image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "parent_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "afafc91e60510632355775a931a9ec784ab48e6d958ba46a2f1087574b0e3680"
+}

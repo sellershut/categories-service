@@ -4,7 +4,7 @@ port = 1610
 log-level = "h2=info,debug"
 
 [misc]
-something = "http://localhost:8080"
+max_query_results = 1000
 
 [database]
 pool_size = 100
