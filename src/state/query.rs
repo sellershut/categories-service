@@ -151,6 +151,7 @@ impl QueryCategories for AppState {
         );
 
         let get_count: i64 = actual_count as i64 + 1;
+        dbg!(get_count);
 
         // a cursor was provided, so we are skipping to somewhere
         let connection = if let Some(ref cursor) = pagination.cursor_value {
@@ -199,22 +200,28 @@ impl QueryCategories for AppState {
                 Index::First(_) => sqlx::query_as!(
                     entity::Category,
                     "select * FROM category
-                            order by
-                                created_at asc
-                            limit $1",
-                    get_count
+                        where
+                            ($2::text is not null and parent_id = $2) or parent_id is null
+                        order by
+                            created_at asc
+                        limit $1",
+                    get_count,
+                    parent_id
                 )
                 .fetch_all(&self.services.postgres)
-                .instrument(debug_span!("pg.select.*"))
+                .instrument(debug_span!("pg.select.count"))
                 .await
                 .map_err(map_err)?,
                 Index::Last(_) => sqlx::query_as!(
                     entity::Category,
                     "select * FROM category
-                            order by
-                                created_at desc
-                            limit $1",
-                    get_count
+                        where
+                            ($2::text is not null and parent_id = $2) or parent_id is null
+                        order by
+                            created_at desc
+                        limit $1",
+                    get_count,
+                    parent_id
                 )
                 .fetch_all(&self.services.postgres)
                 .instrument(debug_span!("pg.select.*"))
@@ -476,7 +483,15 @@ fn parse_categories(
             .map_err(map_err)
     };
 
-    let categories: Result<Vec<_>, _> = if has_more {
+    dbg!(&categories);
+
+    let categories: Result<Vec<_>, _> = if left_side {
+        categories
+            .into_iter()
+            .take(user_count)
+            .map(&to_node)
+            .collect()
+    } else if has_more {
         categories
             .into_iter()
             .rev() // need to take from the right hand side
