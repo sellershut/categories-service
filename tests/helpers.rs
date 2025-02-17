@@ -1,4 +1,4 @@
-use categories_service::state::AppState;
+use categories_service::{state::AppState, AppConfig};
 use sellershut_core::categories::{
     mutate_categories_client::MutateCategoriesClient,
     query_categories_client::QueryCategoriesClient,
@@ -29,7 +29,12 @@ impl TestApp {
         });
 
         let services = Services { postgres: pool };
-        let state = AppState::new(0, services);
+
+        let app_config = AppConfig {
+            max_query_results: 100,
+        };
+
+        let state = AppState::new(0, services, app_config);
 
         dbg!(&state.addr.port());
 
