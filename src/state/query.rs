@@ -458,7 +458,6 @@ fn parse_categories(
     let count_on_other_end = count_on_other_end
         .ok_or_else(|| tonic::Status::new(tonic::Code::Internal, "count returned no items"))?;
     let left_side = CursorBuilder::is_paginating_from_left(pagination);
-    let cursor_unavailable = CursorBuilder::is_cursor_unavailable(pagination);
 
     let len = categories.len();
 
@@ -494,33 +493,42 @@ fn parse_categories(
     } else if has_more {
         categories
             .into_iter()
-            .rev() // need to take from the right hand side
+            .rev() // need to take from the right hand side as those
+            // are the last ones
             .take(user_count)
-            .rev() // restore the order
+            // https://relay.dev/graphql/connections.htm#sel-FAJJDCBEBay8J
+            //  .rev() // restore the order
             .map(&to_node)
             .collect()
     } else {
-        categories.into_iter().map(&to_node).collect()
+        // restore order from db https://relay.dev/graphql/connections.htm#sel-FAJJDCBEBay8J
+        categories.into_iter().rev().map(&to_node).collect()
     };
+    dbg!(count_on_other_end);
+
+    let edges = categories?;
+    let start = edges.first().map(|f| f.cursor.clone());
+    let end = edges.last().map(|f| f.cursor.clone());
 
     let connection = Connection {
-        edges: categories?,
+        edges,
         page_info: Some(PageInfo {
             has_next_page: {
-                if cursor_unavailable && left_side {
-                    has_more
+                if !left_side {
+                    false
                 } else {
                     count_on_other_end > 0
                 }
             },
             has_previous_page: {
                 if left_side {
-                    count_on_other_end > 0
+                    false
                 } else {
-                    has_more
+                    count_on_other_end > 0
                 }
             },
-            ..Default::default()
+            start_cursor: start,
+            end_cursor: end,
         }),
     };
 

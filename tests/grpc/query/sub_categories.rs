@@ -49,3 +49,66 @@ async fn no_parent_first(pool: PgPool) -> Result<()> {
 
     Ok(())
 }
+
+#[sqlx::test(fixtures(path = "../.././fixtures", scripts("categories")))]
+async fn no_parent_first_lots(pool: PgPool) -> Result<()> {
+    let mut app = TestApp::new(pool).await;
+
+    let getter = GetSubCategoriesRequest {
+        id: None,
+        pagination: Some(Cursor {
+            cursor_value: None,
+            index: Some(Index::First(500)),
+        }),
+    }
+    .into_request();
+
+    let response = app.query.sub_categories(getter).await?.into_inner();
+    dbg!(&response);
+
+    assert_eq!(response.edges.len(), 3);
+
+    Ok(())
+}
+
+#[sqlx::test(fixtures(path = "../.././fixtures", scripts("categories")))]
+async fn no_parent_last_exact(pool: PgPool) -> Result<()> {
+    let mut app = TestApp::new(pool).await;
+
+    let getter = GetSubCategoriesRequest {
+        id: None,
+        pagination: Some(Cursor {
+            cursor_value: None,
+            index: Some(Index::Last(3)),
+        }),
+    }
+    .into_request();
+
+    let response = app.query.sub_categories(getter).await?.into_inner();
+    dbg!(&response);
+
+    assert_eq!(response.edges.len(), 3);
+
+    Ok(())
+}
+
+#[sqlx::test(fixtures(path = "../.././fixtures", scripts("categories")))]
+async fn no_index(pool: PgPool) -> Result<()> {
+    let mut app = TestApp::new(pool).await;
+
+    let getter = GetSubCategoriesRequest {
+        id: None,
+        pagination: Some(Cursor {
+            cursor_value: None,
+            index: None,
+        }),
+    }
+    .into_request();
+
+    let response = app.query.sub_categories(getter).await;
+
+    // no pagination index
+    assert!(response.is_err());
+
+    Ok(())
+}
