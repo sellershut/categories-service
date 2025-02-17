@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * FROM category\n                            order by\n                                created_at asc\n                            limit $1",
+  "query": "select * FROM category\n                            where local = $1\n                            order by\n                                created_at asc\n                            limit $2",
   "describe": {
     "columns": [
       {
@@ -51,6 +51,7 @@
     ],
     "parameters": {
       "Left": [
+        "Bool",
         "Int8"
       ]
     },
@@ -66,5 +67,5 @@
       false
     ]
   },
-  "hash": "539062eae253a3555d3de297a7891a982104e3c085145ac0713c49e91e31fa32"
+  "hash": "95ce2fe15252be7013aba9f50fdf10645da7eb26975d3696d35c2d7f72fd0043"
 }

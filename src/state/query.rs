@@ -3,7 +3,7 @@ use std::error::Error;
 use sellershut_core::{
     categories::{
         query_categories_server::QueryCategories, Category, Connection, GetCategoryRequest,
-        GetSubCategoriesRequest, Node,
+        GetCategoryResponse, GetSubCategoriesRequest, Node,
     },
     common::pagination::{
         self,
@@ -75,10 +75,12 @@ impl QueryCategories for AppState {
                 Index::First(_) => sqlx::query_as!(
                     entity::Category,
                     "select * FROM category
+                            where local = $1
                             order by
                                 created_at asc
-                            limit $1",
-                    get_count
+                            limit $2",
+                    true,
+                    get_count,
                 )
                 .fetch_all(&self.services.postgres)
                 .instrument(debug_span!("pg.select.*"))
@@ -87,10 +89,12 @@ impl QueryCategories for AppState {
                 Index::Last(_) => sqlx::query_as!(
                     entity::Category,
                     "select * FROM category
+                            where local = $1
                             order by
                                 created_at desc
-                            limit $1",
-                    get_count
+                            limit $2",
+                    true,
+                    get_count,
                 )
                 .fetch_all(&self.services.postgres)
                 .instrument(debug_span!("pg.select.*"))
@@ -115,18 +119,22 @@ impl QueryCategories for AppState {
     async fn category_by_id(
         &self,
         request: tonic::Request<GetCategoryRequest>,
-    ) -> Result<tonic::Response<Category>, tonic::Status> {
+    ) -> Result<tonic::Response<GetCategoryResponse>, tonic::Status> {
         let id = request.into_inner().id;
-        let category =
-            sqlx::query_as!(entity::Category, "select * from category where id = $1", id)
-                .fetch_one(&self.services.postgres)
-                .instrument(debug_span!("pg.select.*"))
-                .await
-                .map_err(map_err)?;
+        let category = sqlx::query_as!(
+            entity::Category,
+            "select * from category where ap_id = $1 and local = $2",
+            id,
+            true
+        )
+        .fetch_optional(&self.services.postgres)
+        .instrument(debug_span!("pg.select.*"))
+        .await
+        .map_err(map_err)?;
 
-        let category = Category::from(category);
-
-        Ok(tonic::Response::new(category))
+        Ok(tonic::Response::new(GetCategoryResponse {
+            category: category.map(Category::from),
+        }))
     }
 
     #[doc = " get subcategories"]
@@ -200,13 +208,15 @@ impl QueryCategories for AppState {
                 Index::First(_) => sqlx::query_as!(
                     entity::Category,
                     "select * FROM category
-                        where
-                            ($2::text is not null and parent_id = $2) or parent_id is null
+                        where 
+                            (($2::text is not null and parent_id = $2) or parent_id is null)
+                            and local = $3
                         order by
                             created_at asc
                         limit $1",
                     get_count,
-                    parent_id
+                    parent_id,
+                    true
                 )
                 .fetch_all(&self.services.postgres)
                 .instrument(debug_span!("pg.select.count"))
@@ -216,12 +226,14 @@ impl QueryCategories for AppState {
                     entity::Category,
                     "select * FROM category
                         where
-                            ($2::text is not null and parent_id = $2) or parent_id is null
+                            (($2::text is not null and parent_id = $2) or parent_id is null)
+                             and local = $3
                         order by
                             created_at desc
                         limit $1",
                     get_count,
-                    parent_id
+                    parent_id,
+                    true
                 )
                 .fetch_all(&self.services.postgres)
                 .instrument(debug_span!("pg.select.*"))
@@ -252,15 +264,16 @@ async fn paginate_sub_categories_before(
         "
             select count(*) from category
             where 
-                ((
+                (((
                     created_at <> $1
                     or id > $2
                 )
-                and created_at >= $1) and (($3::text is not null and parent_id = $3) or parent_id is null)
+                and created_at >= $1) and (($3::text is not null and parent_id = $3) or parent_id is null)) and local = $4
         ",
         created_at,
         id,
-        parent_id
+        parent_id,
+        true
     )
     .fetch_one(&state.services.postgres)
     .instrument(debug_span!("pg.select.count"));
@@ -270,11 +283,11 @@ async fn paginate_sub_categories_before(
         "
             select * from category
             where 
-                ((
+                (((
                     created_at = $1
                     and id < $2
                 )
-                or created_at < $1) and (($4::text is not null and parent_id = $4) or parent_id is null)
+                or created_at < $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
             order by
                 created_at desc,
                 id desc
@@ -284,7 +297,8 @@ async fn paginate_sub_categories_before(
         created_at,
         id,
         get_count,
-        parent_id
+        parent_id,
+        true
     )
     .fetch_all(&state.services.postgres)
     .instrument(debug_span!("pg.select.*"));
@@ -303,15 +317,16 @@ async fn paginate_sub_categories_after(
         "
             select count(*) from category
             where 
-                ((
+                (((
                     created_at <> $1
                     or id <= $2
                 )
-                and created_at < $1) and (($3::text is not null and parent_id = $3) or parent_id is null)
+                and created_at < $1) and (($3::text is not null and parent_id = $3) or parent_id is null)) and local = $4
         ",
         created_at,
         id,
-        parent_id
+        parent_id,
+        true
     )
     .fetch_one(&state.services.postgres)
     .instrument(debug_span!("pg.select.count"));
@@ -321,11 +336,11 @@ async fn paginate_sub_categories_after(
         "
             select * from category
             where 
-                ((
+                (((
                     created_at = $1
                     and id > $2
                 )
-                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)
+                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
             order by
                 created_at asc,
                 id asc
@@ -335,7 +350,8 @@ async fn paginate_sub_categories_after(
         created_at,
         id,
         get_count,
-        parent_id
+        parent_id,
+        true
     )
     .fetch_all(&state.services.postgres)
     .instrument(debug_span!("pg.select.*"));
@@ -353,14 +369,15 @@ async fn paginate_categories_before(
         "
             select count(*) from category
             where 
-                (
+                ((
                     created_at <> $1
                     or id > $2
                 )
-                and created_at >= $1
+                and created_at >= $1) and local = $3
         ",
         created_at,
         id,
+        true
     )
     .fetch_one(&state.services.postgres)
     .instrument(debug_span!("pg.select.count"));
@@ -370,11 +387,11 @@ async fn paginate_categories_before(
         "
             select * from category
             where 
-                (
+                ((
                     created_at = $1
                     and id < $2
                 )
-                or created_at < $1
+                or created_at < $1) and local = $4
             order by
                 created_at desc,
                 id desc
@@ -383,7 +400,8 @@ async fn paginate_categories_before(
         ",
         created_at,
         id,
-        get_count
+        get_count,
+        true
     )
     .fetch_all(&state.services.postgres)
     .instrument(debug_span!("pg.select.*"));
@@ -401,14 +419,15 @@ async fn paginate_categories_after(
         "
             select count(*) from category
             where 
-                (
+                ((
                     created_at <> $1
                     or id <= $2
                 )
-                and created_at < $1
+                and created_at < $1) and local = $3
         ",
         created_at,
         id,
+        true
     )
     .fetch_one(&state.services.postgres)
     .instrument(debug_span!("pg.select.count"));
@@ -418,11 +437,11 @@ async fn paginate_categories_after(
         "
             select * from category
             where 
-                (
+                ((
                     created_at = $1
                     and id > $2
                 )
-                or created_at >= $1
+                or created_at >= $1) and local = $4
             order by
                 created_at asc,
                 id asc
@@ -431,7 +450,8 @@ async fn paginate_categories_after(
         ",
         created_at,
         id,
-        get_count
+        get_count,
+        true
     )
     .fetch_all(&state.services.postgres)
     .instrument(debug_span!("pg.select.*"));

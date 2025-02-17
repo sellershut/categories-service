@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            select count(*) from category\n            where \n                ((\n                    created_at <> $1\n                    or id <= $2\n                )\n                and created_at < $1) and local = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "77417337bbbcfe3dbce21d1e35a919ff18c38545eee6e7408463e01413f432d6"
+}

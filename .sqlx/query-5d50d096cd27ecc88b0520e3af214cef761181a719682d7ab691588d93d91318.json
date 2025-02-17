@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * FROM category\n                        where\n                            ($2::text is not null and parent_id = $2) or parent_id is null\n                        order by\n                            created_at desc\n                        limit $1",
+  "query": "select * FROM category\n                        where\n                            (($2::text is not null and parent_id = $2) or parent_id is null)\n                             and local = $3\n                        order by\n                            created_at desc\n                        limit $1",
   "describe": {
     "columns": [
       {
@@ -52,7 +52,8 @@
     "parameters": {
       "Left": [
         "Int8",
-        "Text"
+        "Text",
+        "Bool"
       ]
     },
     "nullable": [
@@ -67,5 +68,5 @@
       false
     ]
   },
-  "hash": "123dcab7311a98c0b46de99c6bf3c545895a257077377d87999bce612f8bff09"
+  "hash": "5d50d096cd27ecc88b0520e3af214cef761181a719682d7ab691588d93d91318"
 }

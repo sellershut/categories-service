@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from category where id = $1",
+  "query": "\n            select * from category\n            where \n                (((\n                    created_at = $1\n                    and id > $2\n                )\n                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5\n            order by\n                created_at asc,\n                id asc\n            limit\n                $3\n        ",
   "describe": {
     "columns": [
       {
@@ -51,7 +51,11 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Timestamptz",
+        "Text",
+        "Int8",
+        "Text",
+        "Bool"
       ]
     },
     "nullable": [
@@ -66,5 +70,5 @@
       false
     ]
   },
-  "hash": "440212a79a4b9887ccfc625493e1558ab8059d7065e39ba1f9885c65ce068148"
+  "hash": "5687825c194e6fb77241cfdaeb0e3eccfe397aa9393c748ef10af5b2c726de74"
 }

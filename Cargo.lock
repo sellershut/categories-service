@@ -1743,7 +1743,7 @@ dependencies = [
 [[package]]
 name = "sellershut-core"
 version = "0.1.0"
-source = "git+https://github.com/sellershut/sellershut-core#c8a844e6c648c3a3cb2e9d3850cbdcad8d3a57c9"
+source = "git+https://github.com/sellershut/sellershut-core#67705f30b5e6c2a647b99f545cdb452d54ab2949"
 dependencies = [
  "base64",
  "prost",
@@ -2179,9 +2179,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.16.0"
+version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38c246215d7d24f48ae091a2902398798e05d978b24315d6efbc00ede9a8bb91"
+checksum = "a40f762a77d2afa88c2d919489e390a12bdd261ed568e60cfa7e48d4e20f0d33"
 dependencies = [
  "cfg-if",
  "fastrand",

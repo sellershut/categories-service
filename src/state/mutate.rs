@@ -1,7 +1,8 @@
 use sellershut_core::{
     categories::{
-        mutate_categories_server::MutateCategories, Category, DeleteCategoryRequest,
-        UpsertCategoryRequest,
+        mutate_categories_server::MutateCategories, Category, CreateCategoryRequest,
+        CreateCategoryResponse, DeleteCategoryRequest, UpsertCategoryRequest,
+        UpsertCategoryResponse,
     },
     google::protobuf::Empty,
 };
@@ -21,8 +22,8 @@ impl MutateCategories for AppState {
     #[tracing::instrument(skip(self), err(Debug))]
     async fn create(
         &self,
-        request: tonic::Request<UpsertCategoryRequest>,
-    ) -> Result<tonic::Response<Category>, Status> {
+        request: tonic::Request<CreateCategoryRequest>,
+    ) -> Result<tonic::Response<CreateCategoryResponse>, Status> {
         let category = request
             .into_inner()
             .category
@@ -53,7 +54,9 @@ impl MutateCategories for AppState {
 
         let category = Category::from(category);
 
-        Ok(tonic::Response::new(category))
+        Ok(tonic::Response::new(CreateCategoryResponse {
+            category: Some(category),
+        }))
     }
 
     #[doc = " Upsert a category"]
@@ -62,7 +65,7 @@ impl MutateCategories for AppState {
     async fn upsert(
         &self,
         request: Request<UpsertCategoryRequest>,
-    ) -> Result<Response<Category>, Status> {
+    ) -> Result<Response<UpsertCategoryResponse>, Status> {
         let data = request
             .into_inner()
             .category
@@ -102,7 +105,9 @@ impl MutateCategories for AppState {
 
         let category = Category::from(category);
 
-        Ok(Response::new(category))
+        Ok(Response::new(UpsertCategoryResponse {
+            category: Some(category),
+        }))
     }
 
     #[doc = " Delete a category"]

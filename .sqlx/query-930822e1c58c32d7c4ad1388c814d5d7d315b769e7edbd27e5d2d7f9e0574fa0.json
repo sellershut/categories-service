@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * FROM category\n                            order by\n                                created_at desc\n                            limit $1",
+  "query": "\n            select * from category\n            where \n                ((\n                    created_at = $1\n                    and id > $2\n                )\n                or created_at >= $1) and local = $4\n            order by\n                created_at asc,\n                id asc\n            limit\n                $3\n        ",
   "describe": {
     "columns": [
       {
@@ -51,7 +51,10 @@
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Timestamptz",
+        "Text",
+        "Int8",
+        "Bool"
       ]
     },
     "nullable": [
@@ -66,5 +69,5 @@
       false
     ]
   },
-  "hash": "638c84c03a1671662af8d475be4a1058126e2c14b2d8cbd73c10f1293e3c26ca"
+  "hash": "930822e1c58c32d7c4ad1388c814d5d7d315b769e7edbd27e5d2d7f9e0574fa0"
 }
