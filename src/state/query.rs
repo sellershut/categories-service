@@ -114,9 +114,19 @@ impl QueryCategories for AppState {
     #[tracing::instrument(skip(self), err(Debug))]
     async fn category_by_id(
         &self,
-        _request: tonic::Request<GetCategoryRequest>,
+        request: tonic::Request<GetCategoryRequest>,
     ) -> Result<tonic::Response<Category>, tonic::Status> {
-        todo!()
+        let id = request.into_inner().id;
+        let category =
+            sqlx::query_as!(entity::Category, "select * from category where id = $1", id)
+                .fetch_one(&self.services.postgres)
+                .instrument(debug_span!("pg.select.*"))
+                .await
+                .map_err(map_err)?;
+
+        let category = Category::from(category);
+
+        Ok(tonic::Response::new(category))
     }
 
     #[doc = " get subcategories"]
