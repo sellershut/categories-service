@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sellershut_core::categories::{Category, UpsertCategoryRequest};
+use sellershut_core::categories::{Category, GetCategoryRequest, UpsertCategoryRequest};
 use sqlx::PgPool;
 use tonic::IntoRequest;
 
@@ -21,7 +21,16 @@ async fn create_user(pool: PgPool) -> Result<()> {
         ..Default::default()
     };
 
-    let response = app.mutate.create(user_request.into_request()).await;
+    let response = app
+        .mutate
+        .create(user_request.into_request())
+        .await?
+        .into_inner()
+        .id;
+
+    let getter = GetCategoryRequest { id: response }.into_request();
+
+    let response = app.query.category_by_id(getter).await;
 
     assert!(response.is_ok());
 
