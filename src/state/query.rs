@@ -134,10 +134,206 @@ impl QueryCategories for AppState {
     #[tracing::instrument(skip(self), err(Debug))]
     async fn sub_categories(
         &self,
-        _request: Request<GetSubCategoriesRequest>,
+        request: Request<GetSubCategoriesRequest>,
     ) -> Result<Response<Connection>, Status> {
-        todo!()
+        let params = request.into_inner();
+        let pagination = params.pagination.expect("pagination params");
+        let parent_id = params.id;
+
+        let max = self.config.max_query_results;
+
+        // get count
+        let actual_count = pagination::query_count(
+            max,
+            &pagination.index.ok_or_else(|| {
+                tonic::Status::new(tonic::Code::Internal, "missing pagination index")
+            })?,
+        );
+
+        let get_count: i64 = actual_count as i64 + 1;
+
+        // a cursor was provided, so we are skipping to somewhere
+        let connection = if let Some(ref cursor) = pagination.cursor_value {
+            let cursor_value = cursor
+                .cursor_type
+                .as_ref()
+                .expect("cursor value is missing");
+
+            let cursor = decode_cursor(cursor_value)?;
+
+            let created_at = OffsetDateTime::parse(cursor.dt(), &Rfc3339)
+                .map_err(|e| tonic::Status::internal(e.to_string()))?;
+
+            let id = cursor.id();
+            let (count, categories) = match cursor_value {
+                CursorType::After(_cursor) => {
+                    paginate_sub_categories_after(
+                        &self,
+                        &created_at,
+                        id,
+                        get_count,
+                        parent_id.as_deref(),
+                    )
+                    .await?
+                }
+                CursorType::Before(_cursor) => {
+                    paginate_sub_categories_before(
+                        &self,
+                        &created_at,
+                        id,
+                        get_count,
+                        parent_id.as_deref(),
+                    )
+                    .await?
+                }
+            };
+
+            parse_categories(count, categories, &pagination, actual_count)?
+        } else {
+            let index = match pagination.index.expect("index to be available") {
+                pagination::cursor::Index::First(count) => Index::First(count),
+                pagination::cursor::Index::Last(count) => Index::Last(count),
+            };
+
+            let categories = match index {
+                Index::First(_) => sqlx::query_as!(
+                    entity::Category,
+                    "select * FROM category
+                            order by
+                                created_at asc
+                            limit $1",
+                    get_count
+                )
+                .fetch_all(&self.services.postgres)
+                .instrument(debug_span!("pg.select.*"))
+                .await
+                .map_err(map_err)?,
+                Index::Last(_) => sqlx::query_as!(
+                    entity::Category,
+                    "select * FROM category
+                            order by
+                                created_at desc
+                            limit $1",
+                    get_count
+                )
+                .fetch_all(&self.services.postgres)
+                .instrument(debug_span!("pg.select.*"))
+                .await
+                .map_err(map_err)?,
+            };
+
+            parse_categories(
+                Some(get_count - categories.len() as i64),
+                categories,
+                &pagination,
+                actual_count,
+            )?
+        };
+
+        Ok(tonic::Response::new(connection))
     }
+}
+
+async fn paginate_sub_categories_before(
+    state: &AppState,
+    created_at: &OffsetDateTime,
+    id: &str,
+    get_count: i64,
+    parent_id: Option<&str>,
+) -> Result<(Option<i64>, Vec<entity::Category>), tonic::Status> {
+    let fut_count = sqlx::query_scalar!(
+        "
+            select count(*) from category
+            where 
+                ((
+                    created_at <> $1
+                    or id > $2
+                )
+                and created_at >= $1) and (($3::text is not null and parent_id = $3) or parent_id is null)
+        ",
+        created_at,
+        id,
+        parent_id
+    )
+    .fetch_one(&state.services.postgres)
+    .instrument(debug_span!("pg.select.count"));
+
+    let fut_categories = sqlx::query_as!(
+        entity::Category,
+        "
+            select * from category
+            where 
+                ((
+                    created_at = $1
+                    and id < $2
+                )
+                or created_at < $1) and (($4::text is not null and parent_id = $4) or parent_id is null)
+            order by
+                created_at desc,
+                id desc
+            limit
+                $3
+        ",
+        created_at,
+        id,
+        get_count,
+        parent_id
+    )
+    .fetch_all(&state.services.postgres)
+    .instrument(debug_span!("pg.select.*"));
+
+    tokio::try_join!(fut_count, fut_categories).map_err(map_err)
+}
+
+async fn paginate_sub_categories_after(
+    state: &AppState,
+    created_at: &OffsetDateTime,
+    id: &str,
+    get_count: i64,
+    parent_id: Option<&str>,
+) -> Result<(Option<i64>, Vec<entity::Category>), tonic::Status> {
+    let fut_count = sqlx::query_scalar!(
+        "
+            select count(*) from category
+            where 
+                ((
+                    created_at <> $1
+                    or id <= $2
+                )
+                and created_at < $1) and (($3::text is not null and parent_id = $3) or parent_id is null)
+        ",
+        created_at,
+        id,
+        parent_id
+    )
+    .fetch_one(&state.services.postgres)
+    .instrument(debug_span!("pg.select.count"));
+
+    let fut_categories = sqlx::query_as!(
+        entity::Category,
+        "
+            select * from category
+            where 
+                ((
+                    created_at = $1
+                    and id > $2
+                )
+                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)
+            order by
+                created_at asc,
+                id asc
+            limit
+                $3
+        ",
+        created_at,
+        id,
+        get_count,
+        parent_id
+    )
+    .fetch_all(&state.services.postgres)
+    .instrument(debug_span!("pg.select.*"));
+
+    tokio::try_join!(fut_count, fut_categories).map_err(map_err)
 }
 
 async fn paginate_categories_before(
