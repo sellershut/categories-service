@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sellershut_core::categories::{Category, GetCategoryRequest, UpsertCategoryRequest};
+use sellershut_core::categories::{Category, CreateCategoryRequest, GetCategoryRequest};
 use sqlx::PgPool;
 use tonic::IntoRequest;
 
@@ -16,7 +16,7 @@ async fn create_category(pool: PgPool) -> Result<()> {
         ..Default::default()
     };
 
-    let category_request = UpsertCategoryRequest {
+    let category_request = CreateCategoryRequest {
         category: Some(category),
         ..Default::default()
     };
@@ -26,13 +26,19 @@ async fn create_category(pool: PgPool) -> Result<()> {
         .create(category_request.into_request())
         .await?
         .into_inner()
-        .id;
+        .category
+        .unwrap();
 
-    let getter = GetCategoryRequest { id: response }.into_request();
+    let getter = GetCategoryRequest { id: response.ap_id }.into_request();
 
-    let response = app.query.category_by_id(getter).await;
+    let response = app
+        .query
+        .category_by_id(getter)
+        .await?
+        .into_inner()
+        .category;
 
-    assert!(response.is_ok());
+    assert!(response.is_some());
 
     Ok(())
 }
