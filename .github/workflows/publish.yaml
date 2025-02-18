@@ -1,0 +1,53 @@
+on:
+  workflow_dispatch:
+    #  workflow_run:
+    #    workflows: ["test"]
+    #    branches: [master]
+    #    types: [completed]
+name: publish
+# cancel on going checks when new code is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: extract metadata (tags, labels) for docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            #  tags: |
+            #    type=ref,event=branch
+            #    type=sha
+      - name: build and push docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
