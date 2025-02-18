@@ -52,8 +52,7 @@ impl QueryCategories for AppState {
 
             let cursor = decode_cursor(cursor_value)?;
 
-            let created_at = OffsetDateTime::parse(cursor.dt(), &Rfc3339)
-                .map_err(|e| tonic::Status::internal(e.to_string()))?;
+            let created_at = OffsetDateTime::parse(cursor.dt(), &Rfc3339).map_err(map_err)?;
 
             let id = cursor.id();
             let (count, categories) = match cursor_value {
@@ -217,8 +216,7 @@ impl QueryCategories for AppState {
 
             let cursor = decode_cursor(cursor_value)?;
 
-            let created_at = OffsetDateTime::parse(cursor.dt(), &Rfc3339)
-                .map_err(|e| tonic::Status::internal(e.to_string()))?;
+            let created_at = OffsetDateTime::parse(cursor.dt(), &Rfc3339).map_err(map_err)?;
 
             let id = cursor.id();
             let (count, categories) = match cursor_value {
@@ -388,7 +386,7 @@ async fn paginate_sub_categories_after(
                     created_at = $1
                     and id > $2
                 )
-                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
+                or created_at > $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
             order by
                 created_at asc,
                 id asc
