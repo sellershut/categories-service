@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n                c.id as id,\n                c.name as name,\n                c.image_url as image_url,\n                c.ap_id as ap_id,\n                c.local as local,\n                c.created_at as created_at,\n                c.parent_id as parent_id,\n                c.updated_at as updated_at,\n                subcategory.ap_id AS \"sub_category_ap_id?\",\n                subcategory.name AS \"sub_category_name?\"\n            from category c\n            left join lateral (\n                select ap_id, name\n                from category sub\n                where sub.ap_id = any(c.sub_categories)\n            ) as subcategory on true\n                where c.ap_id = $1 and local = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "ap_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "local",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "parent_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "sub_category_ap_id?",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "sub_category_name?",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a3eb4f3757873c3fa0c4b7665dbe2e423d50e3bb32ad9254b4cb4f283aacab3d"
+}

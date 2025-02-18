@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from category where ap_id = $1 and local = $2",
+  "query": "\n                insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)\n                values ($1, $2, $3, $4, $5, $6, $7)\n                on conflict (ap_id)\n                do update \n                set name = excluded.name,\n                sub_categories = excluded.sub_categories,\n                image_url = excluded.image_url,\n                parent_id = excluded.parent_id,\n                id = excluded.id,\n                local = excluded.local\n                returning *\n            ",
   "describe": {
     "columns": [
       {
@@ -51,8 +51,13 @@
     ],
     "parameters": {
       "Left": [
-        "Text",
-        "Bool"
+        "Varchar",
+        "Varchar",
+        "VarcharArray",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Varchar"
       ]
     },
     "nullable": [
@@ -67,5 +72,5 @@
       false
     ]
   },
-  "hash": "770e68a64e2be4e207ff09821d85b7707ffbfbc03f3b7244c8cfab7f9ecd08e1"
+  "hash": "fab92a12cc7d3b8086011966d8184370f006e181c569217935adec5b3a4b9632"
 }

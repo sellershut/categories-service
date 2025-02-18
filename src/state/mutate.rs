@@ -37,28 +37,11 @@ impl MutateCategories for AppState {
         let category = sqlx::query_as!(
             entity::Category,
             "
-            with inserted as (
-                insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)
-                values ($1, $2, $3, $4, $5, $6, $7) returning *
-            )
-            select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from inserted c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
-                where c.id = $1 and local = $6",
+                insert into category
+                    (id, name, sub_categories, image_url, parent_id, local, ap_id)
+                values
+                    ($1, $2, $3, $4, $5, $6, $7) returning *
+            ",
             &id,
             &category.name,
             &category.sub_categories,
@@ -67,17 +50,15 @@ impl MutateCategories for AppState {
             category.local,
             category.ap_id,
         )
-        .fetch_all(&self.services.postgres)
+        .fetch_one(&self.services.postgres)
         .instrument(debug_span!("pg.insert"))
         .await
         .map_err(|e| tonic::Status::internal(e.to_string()))?;
 
-        let category = prepare_single_category(category)?;
-
         tracing::debug!(id = %category.ap_id, "category created");
 
         Ok(tonic::Response::new(CreateCategoryResponse {
-            category: Some(category),
+            category: Some(category.into()),
         }))
     }
 
@@ -101,7 +82,6 @@ impl MutateCategories for AppState {
         let category = sqlx::query_as!(
             entity::Category,
             "
-            with inserted as (
                 insert into category (id, name, sub_categories, image_url, parent_id, local, ap_id)
                 values ($1, $2, $3, $4, $5, $6, $7)
                 on conflict (ap_id)
@@ -113,25 +93,6 @@ impl MutateCategories for AppState {
                 id = excluded.id,
                 local = excluded.local
                 returning *
-            )
-            select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from inserted c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
-                where c.ap_id = $7 and local = $6
             ",
             id,
             &data.name,
@@ -141,17 +102,14 @@ impl MutateCategories for AppState {
             &data.local,
             data.ap_id,
         )
-        .fetch_all(&self.services.postgres)
+        .fetch_one(&self.services.postgres)
         .await
         .map_err(|e| Status::internal(e.to_string()))?;
-        println!("{category:#?}");
-
-        let category = prepare_single_category(category)?;
 
         tracing::debug!(id = %data.ap_id, name = %category.name, "category upserted");
 
         Ok(Response::new(UpsertCategoryResponse {
-            category: Some(category),
+            category: Some(category.into()),
         }))
     }
 

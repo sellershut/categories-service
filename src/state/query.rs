@@ -2,8 +2,8 @@ use std::{collections::HashMap, error::Error};
 
 use sellershut_core::{
     categories::{
-        query_categories_server::QueryCategories, Category, Connection, GetCategoryRequest,
-        GetCategoryResponse, GetSubCategoriesRequest, Node, SubCategory,
+        query_categories_server::QueryCategories, Category, CategoryDetailed, Connection,
+        GetCategoryRequest, GetCategoryResponse, GetSubCategoriesRequest, Node, SubCategory,
     },
     common::pagination::{
         self,
@@ -64,8 +64,6 @@ impl QueryCategories for AppState {
                 }
             };
 
-            let categories: Vec<_> = prepare_categories(categories).values().cloned().collect();
-
             parse_categories(count, categories, &pagination, actual_count)?
         } else {
             let index = match pagination.index.expect("index to be available") {
@@ -76,26 +74,10 @@ impl QueryCategories for AppState {
             let categories = match index {
                 Index::First(_) => sqlx::query_as!(
                     entity::Category,
-                    "select
-                        c.id as id,
-                        c.name as name,
-                        c.image_url as image_url,
-                        c.ap_id as ap_id,
-                        c.local as local,
-                        c.created_at as created_at,
-                        c.parent_id as parent_id,
-                        c.updated_at as updated_at,
-                        subcategory.ap_id AS sub_category_ap_id,
-                        subcategory.name AS sub_category_name
-                    from category c
-                    left join lateral (
-                        select ap_id, name
-                        from category sub
-                        where sub.ap_id = any(c.sub_categories)
-                    ) as subcategory on true
-                            where c.local = $1
+                    "select * FROM category
+                            where local = $1
                             order by
-                                c.created_at asc
+                                created_at asc
                             limit $2",
                     true,
                     get_count,
@@ -106,23 +88,7 @@ impl QueryCategories for AppState {
                 .map_err(map_err)?,
                 Index::Last(_) => sqlx::query_as!(
                     entity::Category,
-                    "select
-                        c.id as id,
-                        c.name as name,
-                        c.image_url as image_url,
-                        c.ap_id as ap_id,
-                        c.local as local,
-                        c.created_at as created_at,
-                        c.parent_id as parent_id,
-                        c.updated_at as updated_at,
-                        subcategory.ap_id AS sub_category_ap_id,
-                        subcategory.name AS sub_category_name
-                    from category c
-                    left join lateral (
-                        select ap_id, name
-                        from category sub
-                        where sub.ap_id = any(c.sub_categories)
-                    ) as subcategory on true
+                    "select * FROM category
                             where local = $1
                             order by
                                 created_at desc
@@ -135,8 +101,6 @@ impl QueryCategories for AppState {
                 .await
                 .map_err(map_err)?,
             };
-
-            let categories: Vec<_> = prepare_categories(categories).values().cloned().collect();
 
             parse_categories(
                 Some(get_count - categories.len() as i64),
@@ -159,7 +123,7 @@ impl QueryCategories for AppState {
         let id = request.into_inner().ap_id;
         debug!(id = id, "getting by ap_id");
         let category = sqlx::query_as!(
-            entity::Category,
+            entity::CategoryDetailed,
             "select
                 c.id as id,
                 c.name as name,
@@ -253,7 +217,6 @@ impl QueryCategories for AppState {
                 }
             };
 
-            let categories: Vec<_> = prepare_categories(categories).values().cloned().collect();
             parse_categories(count, categories, &pagination, actual_count)?
         } else {
             let index = match pagination.index.expect("index to be available") {
@@ -264,34 +227,12 @@ impl QueryCategories for AppState {
             let categories = match index {
                 Index::First(_) => sqlx::query_as!(
                     entity::Category,
-                    "select
-                        c.id as id,
-                        c.name as name,
-                        c.image_url as image_url,
-                        c.ap_id as ap_id,
-                        c.local as local,
-                        c.created_at as created_at,
-                        c.parent_id as parent_id,
-                        c.updated_at as updated_at,
-                        subcategory.ap_id AS \"sub_category_ap_id?\",
-                        subcategory.name AS \"sub_category_name?\",
-                        subcategory.id AS \"sub_category_id?\",
-                        subcategory.image_url AS \"sub_category_image_url?\",
-                        subcategory.local AS \"sub_category_local?\",
-                        subcategory.created_at AS \"sub_category_created_at?\",
-                        subcategory.updated_at AS \"sub_category_updated_at?\",
-                        subcategory.parent_id AS \"sub_category_parent_id?\"
-                    from category c
-                    left join lateral (
-                        select ap_id, name, sub_categories, image_url, parent_id, created_at, updated_at, local, id
-                        from category sub
-                        where sub.ap_id = any(c.sub_categories)
-                    ) as subcategory on true
+                    "select * FROM category
                         where 
-                            (($2::text is not null and c.parent_id = $2) or c.parent_id is null)
-                            and c.local = $3
+                            (($2::text is not null and parent_id = $2) or parent_id is null)
+                            and local = $3
                         order by
-                            c.created_at asc
+                            created_at asc
                         limit $1",
                     get_count,
                     parent_id,
@@ -303,28 +244,12 @@ impl QueryCategories for AppState {
                 .map_err(map_err)?,
                 Index::Last(_) => sqlx::query_as!(
                     entity::Category,
-                    "select
-                        c.id as id,
-                        c.name as name,
-                        c.image_url as image_url,
-                        c.ap_id as ap_id,
-                        c.local as local,
-                        c.created_at as created_at,
-                        c.parent_id as parent_id,
-                        c.updated_at as updated_at,
-                        subcategory.ap_id AS \"sub_category_ap_id?\",
-                        subcategory.name AS \"sub_category_name?\"
-                    from category c
-                    left join lateral (
-                        select ap_id, name
-                        from category sub
-                        where sub.ap_id = any(c.sub_categories)
-                    ) as subcategory on true
+                    "select * FROM category
                         where
-                            (($2::text is not null and c.parent_id = $2) or c.parent_id is null)
-                             and c.local = $3
+                            (($2::text is not null and parent_id = $2) or parent_id is null)
+                             and local = $3
                         order by
-                            c.created_at desc
+                            created_at desc
                         limit $1",
                     get_count,
                     parent_id,
@@ -336,8 +261,6 @@ impl QueryCategories for AppState {
                 .map_err(map_err)?,
             };
 
-
-            let categories: Vec<_> = prepare_categories(categories).values().cloned().collect();
             println!("post: {categories:#?}");
             parse_categories(
                 Some(get_count - categories.len() as i64),
@@ -378,32 +301,17 @@ async fn paginate_sub_categories_before(
 
     let fut_categories = sqlx::query_as!(
         entity::Category,
-            "select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from category c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
+        "
+            select * from category
             where 
                 (((
-                    c.created_at = $1
-                    and c.id < $2
+                    created_at = $1
+                    and id < $2
                 )
-                or c.created_at < $1) and (($4::text is not null and c.parent_id = $4) or c.parent_id is null)) and c.local = $5
+                or created_at < $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
             order by
-                c.created_at desc,
-                c.id desc
+                created_at desc,
+                id desc
             limit
                 $3
         ",
@@ -446,32 +354,17 @@ async fn paginate_sub_categories_after(
 
     let fut_categories = sqlx::query_as!(
         entity::Category,
-            "select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from category c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
+        "
+            select * from category
             where 
                 (((
-                    c.created_at = $1
-                    and c.id > $2
+                    created_at = $1
+                    and id > $2
                 )
-                or c.created_at >= $1) and (($4::text is not null and c.parent_id = $4) or c.parent_id is null)) and c.local = $5
+                or created_at >= $1) and (($4::text is not null and parent_id = $4) or parent_id is null)) and local = $5
             order by
-                c.created_at asc,
-                c.id asc
+                created_at asc,
+                id asc
             limit
                 $3
         ",
@@ -512,32 +405,17 @@ async fn paginate_categories_before(
 
     let fut_categories = sqlx::query_as!(
         entity::Category,
-        "select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from category c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
+        "
+            select * from category
             where 
                 ((
-                    c.created_at = $1
-                    and c.id < $2
+                    created_at = $1
+                    and id < $2
                 )
-                or c.created_at < $1) and c.local = $4
+                or created_at < $1) and local = $4
             order by
-                c.created_at desc,
-                c.id desc
+                created_at desc,
+                id desc
             limit
                 $3
         ",
@@ -577,32 +455,17 @@ async fn paginate_categories_after(
 
     let fut_categories = sqlx::query_as!(
         entity::Category,
-        "select
-                c.id as id,
-                c.name as name,
-                c.image_url as image_url,
-                c.ap_id as ap_id,
-                c.local as local,
-                c.created_at as created_at,
-                c.parent_id as parent_id,
-                c.updated_at as updated_at,
-                subcategory.ap_id AS \"sub_category_ap_id?\",
-                subcategory.name AS \"sub_category_name?\"
-            from category c
-            left join lateral (
-                select ap_id, name
-                from category sub
-                where sub.ap_id = any(c.sub_categories)
-            ) as subcategory on true
+        "
+            select * from category
             where 
                 ((
-                    c.created_at = $1
-                    and c.id > $2
+                    created_at = $1
+                    and id > $2
                 )
-                or c.created_at >= $1) and c.local = $4
+                or created_at >= $1) and local = $4
             order by
-                c.created_at asc,
-                c.id asc
+                created_at asc,
+                id asc
             limit
                 $3
         ",
@@ -627,7 +490,7 @@ fn map_err(err: impl Error) -> tonic::Status {
 
 fn parse_categories(
     count_on_other_end: Option<i64>,
-    categories: Vec<Category>,
+    categories: Vec<entity::Category>,
     pagination: &Cursor,
     actual_count: i32,
 ) -> Result<Connection, tonic::Status> {
@@ -641,7 +504,9 @@ fn parse_categories(
 
     let has_more = len > user_count;
 
-    let to_node = |category: Category| -> Result<Node, tonic::Status> {
+    let to_node = |category: entity::Category| -> Result<Node, tonic::Status> {
+        let category = Category::from(category);
+
         let dt = category.created_at.expect("to exist");
         let dt = OffsetDateTime::try_from(dt)
             .map_err(|_| tonic::Status::invalid_argument("timestamp is invalid"))?;
@@ -711,12 +576,14 @@ fn parse_categories(
     Ok(connection)
 }
 
-pub fn prepare_categories(category: Vec<entity::Category>) -> HashMap<String, Category> {
+pub fn prepare_single_category(
+    category: Vec<entity::CategoryDetailed>,
+) -> Result<CategoryDetailed, Status> {
     let mut categories_map = HashMap::new();
     for result in category.iter() {
         let category = categories_map
             .entry(result.ap_id.clone())
-            .or_insert(Category {
+            .or_insert(CategoryDetailed {
                 id: result.id.clone(),
                 name: result.name.to_string(),
                 sub_categories: Vec::with_capacity(category.len()),
@@ -738,12 +605,6 @@ pub fn prepare_categories(category: Vec<entity::Category>) -> HashMap<String, Ca
             });
         }
     }
-
-    categories_map
-}
-
-pub fn prepare_single_category(category: Vec<entity::Category>) -> Result<Category, Status> {
-    let categories_map = prepare_categories(category);
 
     categories_map
         .into_iter()

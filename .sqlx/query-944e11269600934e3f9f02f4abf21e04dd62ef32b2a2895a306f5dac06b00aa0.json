@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "delete from category where ap_id = $1 returning *",
+  "query": "\n                insert into category\n                    (id, name, sub_categories, image_url, parent_id, local, ap_id)\n                values\n                    ($1, $2, $3, $4, $5, $6, $7) returning *\n            ",
   "describe": {
     "columns": [
       {
@@ -51,7 +51,13 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Varchar",
+        "Varchar",
+        "VarcharArray",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Varchar"
       ]
     },
     "nullable": [
@@ -66,5 +72,5 @@
       false
     ]
   },
-  "hash": "e7ed473cdc3310cea0de90431e9f36e4b1e676af5a17312647531f2b43840ff0"
+  "hash": "944e11269600934e3f9f02f4abf21e04dd62ef32b2a2895a306f5dac06b00aa0"
 }

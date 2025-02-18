@@ -1,5 +1,5 @@
 use nanoid::nanoid;
-use sellershut_core::categories::CategoryMutate;
+use sellershut_core::categories::Category;
 use tracing::{error, trace};
 use url::Url;
 /// Alphabet of characters making up an ID
@@ -38,7 +38,7 @@ mod tests {
     }
 }
 
-pub fn validate_input(category: &CategoryMutate) -> Result<(), tonic::Status> {
+pub fn validate_input(category: &Category) -> Result<(), tonic::Status> {
     if let Some(ref url) = category.image_url {
         check_url(url)?;
     }
