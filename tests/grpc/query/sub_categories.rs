@@ -22,7 +22,7 @@ async fn no_parent_last(pool: PgPool) -> Result<()> {
     .into_request();
 
     let response = app.query.sub_categories(getter).await?.into_inner();
-    dbg!(&response);
+    dbg!("last", &response);
 
     assert_eq!(response.edges.len(), 2);
 
@@ -43,7 +43,7 @@ async fn no_parent_first(pool: PgPool) -> Result<()> {
     .into_request();
 
     let response = app.query.sub_categories(getter).await?.into_inner();
-    dbg!(&response);
+    //    dbg!(&response);
 
     assert_eq!(response.edges.len(), 2);
 
@@ -64,7 +64,7 @@ async fn no_parent_first_lots(pool: PgPool) -> Result<()> {
     .into_request();
 
     let response = app.query.sub_categories(getter).await?.into_inner();
-    dbg!(&response);
+    //   dbg!(&response);
 
     assert_eq!(response.edges.len(), 3);
 

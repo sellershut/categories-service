@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sellershut_core::categories::{Category, CreateCategoryRequest, GetCategoryRequest};
+use sellershut_core::categories::{CategoryMutate, CreateCategoryRequest, GetCategoryRequest};
 use sqlx::PgPool;
 use tonic::IntoRequest;
 
@@ -9,7 +9,7 @@ use crate::helpers::TestApp;
 async fn create_category(pool: PgPool) -> Result<()> {
     let mut app = TestApp::new(pool).await;
 
-    let category = Category {
+    let category = CategoryMutate {
         name: "Something".into(),
         ap_id: format!("http://localhost"),
         local: true,
@@ -29,11 +29,14 @@ async fn create_category(pool: PgPool) -> Result<()> {
         .category
         .unwrap();
 
-    let getter = GetCategoryRequest { id: response.ap_id }.into_request();
+    let getter = GetCategoryRequest {
+        ap_id: response.ap_id,
+    }
+    .into_request();
 
     let response = app
         .query
-        .category_by_id(getter)
+        .category_by_ap_id(getter)
         .await?
         .into_inner()
         .category;

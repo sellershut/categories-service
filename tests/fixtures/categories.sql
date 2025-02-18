@@ -3,7 +3,7 @@ insert into category (id, ap_id, local, name, image_url, parent_id, sub_categori
 values 
 ('1', 'http://localhost/category/cat1', true, 'Electronics', 'https://example.com/electronics.jpg', null, '{"http://localhost/category/subcat1", "http://localhost/category/subcat2", "http://localhost/category/subcat3"}'),
 ('2', 'http://localhost/category/cat2', true, 'Clothing', 'https://example.com/clothing.jpg', null, '{"http://localhost/category/subcat4", "http://localhost/category/subcat5", "http://localhost/category/subcat6"}'),
-('3', 'http://localhost/category/cat3', false, 'Books', null, null, '{"http://localhost/category/subcat7", "http://localhost/category/subcat8"}');
+('3', 'http://localhost/category/cat3', true, 'Books', null, null, '{"http://localhost/category/subcat7", "http://localhost/category/subcat8"}');
 
 -- Insert sub-categories under Electronics
 insert into category (id, ap_id, local, name, sub_categories, parent_id)
@@ -32,7 +32,7 @@ values
 ('13', 'http://localhost/category/item2', true, 'Gaming Laptops', 'http://localhost/category/subcat2'),
 ('14', 'http://localhost/category/item3', true, '4K TVs', 'http://localhost/category/subcat3'),
 ('15', 'http://localhost/category/item4', true, 'Nike T-Shirts', 'http://localhost/category/subcat4'),
-('16', 'http://localhost/category/item5', true, 'Levi Jeans', 'http://localhost/category/subcat5'),
+('16', 'http://localhost/category/item5', true, 'Levis Jeans', 'http://localhost/category/subcat5'),
 ('17', 'http://localhost/category/item6', false, 'Mystery Novels', 'http://localhost/category/subcat7'),
 ('18', 'http://localhost/category/item7', false, 'Biographies', 'http://localhost/category/subcat8');
 

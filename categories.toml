@@ -8,7 +8,7 @@ max_query_results = 1000
 
 [database]
 pool_size = 100
-port = 5432
+port = 1234
 name = "categories"
 host = "localhost"
 user = "postgres"
