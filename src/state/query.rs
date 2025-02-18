@@ -484,7 +484,7 @@ async fn paginate_categories_after(
                     created_at = $1
                     and id > $2
                 )
-                or created_at >= $1) and local = $4
+                or created_at > $1) and local = $4
             order by
                 created_at asc,
                 id asc

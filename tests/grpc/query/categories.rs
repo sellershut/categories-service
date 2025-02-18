@@ -10,7 +10,7 @@ use tonic::IntoRequest;
 use crate::helpers::TestApp;
 
 #[sqlx::test(fixtures(path = "../.././fixtures", scripts("categories")))]
-async fn no_parent_last(pool: PgPool) -> Result<()> {
+async fn all_last(pool: PgPool) -> Result<()> {
     let mut app = TestApp::new(pool).await;
 
     let getter = Cursor {
