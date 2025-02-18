@@ -150,11 +150,9 @@ impl QueryCategories for AppState {
         .await
         .map_err(map_err)?;
 
-        let category = prepare_single_category(category)?;
+        let category = prepare_single_category(category).ok();
 
-        Ok(tonic::Response::new(GetCategoryResponse {
-            category: Some(category),
-        }))
+        Ok(tonic::Response::new(GetCategoryResponse { category }))
     }
 
     #[doc = " get category by id"]
@@ -286,7 +284,6 @@ impl QueryCategories for AppState {
                 .map_err(map_err)?,
             };
 
-            println!("post: {categories:#?}");
             parse_categories(
                 Some(get_count - categories.len() as i64),
                 categories,
