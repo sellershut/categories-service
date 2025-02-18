@@ -41,3 +41,8 @@ features = ["api", "postgres", "tracing"]
 [dev-dependencies.sellershut-core]
 git = "https://github.com/sellershut/sellershut-core"
 features = ["rpc-client-categories"]
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
