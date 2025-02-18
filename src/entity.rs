@@ -14,11 +14,6 @@ pub struct Category {
     pub local: bool,
 }
 
-pub struct SubCategory {
-    name: String,
-    ap_id: String,
-}
-
 impl From<Category> for sellershut_core::categories::Category {
     fn from(value: Category) -> Self {
         Self {

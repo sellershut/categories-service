@@ -3,7 +3,8 @@ use std::{collections::HashMap, error::Error};
 use sellershut_core::{
     categories::{
         query_categories_server::QueryCategories, Category, CategoryDetailed, Connection,
-        GetCategoryRequest, GetCategoryResponse, GetSubCategoriesRequest, Node, SubCategory,
+        GetCategoryByIdRequest, GetCategoryByIdResponse, GetCategoryRequest, GetCategoryResponse,
+        GetSubCategoriesRequest, Node, SubCategory,
     },
     common::pagination::{
         self,
@@ -154,6 +155,32 @@ impl QueryCategories for AppState {
 
         Ok(tonic::Response::new(GetCategoryResponse {
             category: Some(category),
+        }))
+    }
+
+    #[doc = " get category by id"]
+    #[must_use]
+    #[tracing::instrument(skip(self), err(Debug))]
+    async fn category_by_id(
+        &self,
+        request: tonic::Request<GetCategoryByIdRequest>,
+    ) -> Result<tonic::Response<GetCategoryByIdResponse>, tonic::Status> {
+        let id = request.into_inner().id;
+        debug!(id = id, "getting by id");
+        let category = sqlx::query_as!(
+            entity::Category,
+            "select * from category
+            where id = $1
+            ",
+            id
+        )
+        .fetch_optional(&self.services.postgres)
+        .instrument(debug_span!("pg.select.*"))
+        .await
+        .map_err(map_err)?;
+
+        Ok(tonic::Response::new(GetCategoryByIdResponse {
+            category: category.map(Into::into),
         }))
     }
 

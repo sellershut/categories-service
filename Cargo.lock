@@ -1743,7 +1743,7 @@ dependencies = [
 [[package]]
 name = "sellershut-core"
 version = "0.1.0"
-source = "git+https://github.com/sellershut/sellershut-core#9189367ad36be06d58f210a2c2c28244ca4df276"
+source = "git+https://github.com/sellershut/sellershut-core#ab81b2adc7ba9d06386ee72e9e9c686418526587"
 dependencies = [
  "base64",
  "prost",

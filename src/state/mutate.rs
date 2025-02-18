@@ -10,7 +10,6 @@ use tracing::{debug_span, Instrument};
 
 use crate::{
     entity,
-    state::query::prepare_single_category,
     utils::{generate_id, validate_input},
 };
 
