@@ -14,7 +14,12 @@ async fn category_by_id(pool: PgPool) -> Result<()> {
     }
     .into_request();
 
-    let response = app.query.category_by_ap_id(getter).await?.into_inner().category;
+    let response = app
+        .query
+        .category_by_ap_id(getter)
+        .await?
+        .into_inner()
+        .category;
 
     assert!(response.is_some());
 
