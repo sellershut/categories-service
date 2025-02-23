@@ -8,10 +8,8 @@ use sellershut_core::{
 use tonic::{Request, Response, Status};
 use tracing::{debug_span, Instrument};
 
-use crate::{
-    entity,
-    utils::{generate_id, validate_input},
-};
+use crate::{entity, utils::validate_input};
+use sellershut_services::utils::{self, ID_LENGTH};
 
 use super::AppState;
 
@@ -31,7 +29,7 @@ impl MutateCategories for AppState {
 
         validate_input(&category)?;
 
-        let id = generate_id();
+        let id = utils::generate_id(ID_LENGTH);
 
         let category = sqlx::query_as!(
             entity::Category,
@@ -76,7 +74,7 @@ impl MutateCategories for AppState {
 
         validate_input(&data)?;
 
-        let id = generate_id();
+        let id = utils::generate_id(ID_LENGTH);
 
         let category = sqlx::query_as!(
             entity::Category,

@@ -8,7 +8,6 @@ license = "AGPL-3.0-only"
 anyhow = "1.0.95"
 clap = { version = "4.5.29", features = ["derive"] }
 config = { version = "0.15.8", features = ["toml"], default-features = false }
-nanoid = "0.4.0"
 prost = "0.13.5"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
@@ -36,7 +35,7 @@ features = ["rpc-server-categories", "serde", "time"]
 
 [dependencies.sellershut-services]
 git = "https://github.com/sellershut/services-lib"
-features = ["api", "postgres", "tracing"]
+features = ["api", "id-gen", "postgres", "tracing"]
 
 [dev-dependencies.sellershut-core]
 git = "https://github.com/sellershut/sellershut-core"
