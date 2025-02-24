@@ -19,7 +19,7 @@ pub fn validate_input(category: &Category) -> Result<(), tonic::Status> {
 
 pub fn check_url(value: &str) -> Result<Url, tonic::Status> {
     Url::parse(value).map_err(|_e| {
-        let msg = "image_url is not a valid url";
+        let msg = format!("invalid valid url: {value}");
         error!(msg);
         tonic::Status::failed_precondition(msg)
     })
