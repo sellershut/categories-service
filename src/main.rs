@@ -1,7 +1,7 @@
 use anyhow::Result;
-use categories_service::{state::AppState, AppConfig};
+use categories_service::{AppConfig, state::AppState};
 use clap::Parser;
-use sellershut_services::{tracing::TracingBuilder, Configuration, Services};
+use sellershut_services::{Configuration, Services, tracing::TracingBuilder};
 use tracing::error;
 
 /// categories-service
