@@ -1,9 +1,9 @@
-use categories_service::{state::AppState, AppConfig};
+use categories_service::{AppConfig, state::AppState};
 use sellershut_core::categories::{
     mutate_categories_client::MutateCategoriesClient,
     query_categories_client::QueryCategoriesClient,
 };
-use sellershut_services::{tracing::TracingBuilder, Services};
+use sellershut_services::{Services, tracing::TracingBuilder};
 use sqlx::PgPool;
 use tokio::sync::oneshot;
 use tonic::transport::Channel;

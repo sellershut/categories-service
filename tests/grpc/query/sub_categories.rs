@@ -2,8 +2,8 @@ use anyhow::Result;
 use sellershut_core::{
     categories::GetSubCategoriesRequest,
     common::pagination::{
-        cursor::{self, cursor_value::CursorType, CursorValue, Index},
         Cursor,
+        cursor::{self, CursorValue, Index, cursor_value::CursorType},
     },
 };
 use sqlx::PgPool;

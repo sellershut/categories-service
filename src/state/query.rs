@@ -2,19 +2,18 @@ use std::{collections::HashMap, error::Error};
 
 use sellershut_core::{
     categories::{
-        query_categories_server::QueryCategories, Category, CategoryDetailed, Connection,
-        GetCategoryByIdRequest, GetCategoryByIdResponse, GetCategoryRequest, GetCategoryResponse,
-        GetSubCategoriesRequest, Node, SubCategory,
+        Category, CategoryDetailed, Connection, GetCategoryByIdRequest, GetCategoryByIdResponse,
+        GetCategoryRequest, GetCategoryResponse, GetSubCategoriesRequest, Node, SubCategory,
+        query_categories_server::QueryCategories,
     },
     common::pagination::{
-        self,
-        cursor::{cursor_value::CursorType, Index},
-        Cursor, CursorBuilder, PageInfo,
+        self, Cursor, CursorBuilder, PageInfo,
+        cursor::{Index, cursor_value::CursorType},
     },
 };
-use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
+use time::{OffsetDateTime, UtcOffset, format_description::well_known::Rfc3339};
 use tonic::{Request, Response, Status};
-use tracing::{debug, debug_span, Instrument};
+use tracing::{Instrument, debug, debug_span};
 
 use crate::entity;
 
@@ -23,7 +22,6 @@ use super::AppState;
 #[tonic::async_trait]
 impl QueryCategories for AppState {
     #[doc = " gets all categories"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn categories(
         &self,
@@ -114,7 +112,6 @@ impl QueryCategories for AppState {
     }
 
     #[doc = " get category by id"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn category_by_ap_id(
         &self,
@@ -156,7 +153,6 @@ impl QueryCategories for AppState {
     }
 
     #[doc = " get category by id"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn category_by_id(
         &self,
@@ -182,7 +178,6 @@ impl QueryCategories for AppState {
     }
 
     #[doc = " get subcategories"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn sub_categories(
         &self,

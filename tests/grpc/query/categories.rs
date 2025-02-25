@@ -1,8 +1,8 @@
 use anyhow::Result;
 
 use sellershut_core::common::pagination::{
-    cursor::{self, cursor_value::CursorType, CursorValue, Index},
     Cursor,
+    cursor::{self, CursorValue, Index, cursor_value::CursorType},
 };
 use sqlx::PgPool;
 use tonic::IntoRequest;

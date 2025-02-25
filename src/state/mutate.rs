@@ -1,12 +1,12 @@
 use sellershut_core::{
     categories::{
-        mutate_categories_server::MutateCategories, CreateCategoryRequest, CreateCategoryResponse,
-        DeleteCategoryRequest, UpsertCategoryRequest, UpsertCategoryResponse,
+        CreateCategoryRequest, CreateCategoryResponse, DeleteCategoryRequest,
+        UpsertCategoryRequest, UpsertCategoryResponse, mutate_categories_server::MutateCategories,
     },
     google::protobuf::Empty,
 };
 use tonic::{Request, Response, Status};
-use tracing::{debug_span, Instrument};
+use tracing::{Instrument, debug_span};
 
 use crate::{entity, utils::validate_input};
 use sellershut_services::utils::{self, ID_LENGTH};
@@ -60,7 +60,6 @@ impl MutateCategories for AppState {
     }
 
     #[doc = " Upsert a category"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn upsert(
         &self,
@@ -111,7 +110,6 @@ impl MutateCategories for AppState {
     }
 
     #[doc = " Delete a category"]
-    #[must_use]
     #[tracing::instrument(skip(self), err(Debug))]
     async fn delete(
         &self,

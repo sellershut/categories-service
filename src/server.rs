@@ -2,7 +2,7 @@ use sellershut_core::categories::{
     mutate_categories_server::MutateCategoriesServer,
     query_categories_server::QueryCategoriesServer,
 };
-use tonic::transport::{server::TcpIncoming, Server};
+use tonic::transport::{Server, server::TcpIncoming};
 use tracing::info;
 
 use crate::state::AppState;
